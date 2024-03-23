@@ -148,7 +148,9 @@ public:
         OP_BLUETOOTH_ADVERTISE = 114,
         OP_RECORD_INCOMING_PHONE_AUDIO = 115,
         OP_NEARBY_WIFI_DEVICES = 116,
-        _NUM_OP = 117
+        // Ops 117-147 are not listed, hence seemingly not used in native
+        OP_OTHER_SENSORS = 148,
+        _NUM_OP = 149
     };
 
     enum {

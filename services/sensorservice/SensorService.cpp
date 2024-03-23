@@ -2287,11 +2287,12 @@ bool SensorService::canAccessSensor(const Sensor& sensor, const char* operation,
     }
 
     // Check if a permission is required for this sensor
-    if (sensor.getRequiredPermission().length() <= 0) {
-        return true;
-    }
+    bool noAssociatedPermission = (sensor.getRequiredPermission().length() <= 0);
 
     const int32_t opCode = sensor.getRequiredAppOp();
+    const int32_t appOpMode = sAppOpsManager.noteOp(opCode,
+            IPCThreadState::self()->getCallingUid(), opPackageName);
+    bool appOpAllowed = (appOpMode == AppOpsManager::MODE_ALLOWED);
     int targetSdkVersion = getTargetSdkVersion(opPackageName);
 
     bool canAccess = false;
@@ -2301,13 +2302,14 @@ bool SensorService::canAccessSensor(const Sensor& sensor, const char* operation,
         // Allow access to step sensors if the application targets pre-Q, which is before the
         // requirement to hold the AR permission to access Step Counter and Step Detector events
         // was introduced.
-        canAccess = true;
+        // [MSe1969: also here only, if Op allowed]
+        canAccess = appOpAllowed;
+    } else if (noAssociatedPermission) {
+        canAccess = appOpAllowed;
     } else if (hasPermissionForSensor(sensor)) {
         // Ensure that the AppOp is allowed, or that there is no necessary app op for the sensor
         if (opCode >= 0) {
-            const int32_t appOpMode = sAppOpsManager.checkOp(opCode,
-                    IPCThreadState::self()->getCallingUid(), opPackageName);
-            canAccess = (appOpMode == AppOpsManager::MODE_ALLOWED);
+            canAccess = appOpAllowed;
         } else {
             canAccess = true;
         }
